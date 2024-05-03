@@ -45,4 +45,5 @@ group :development do
   # gem "spring"
 end
 gem 'pg'
+gem 'jwt', '~> 1.5', '>= 1.5.4'
 

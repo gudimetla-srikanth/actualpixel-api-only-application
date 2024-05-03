@@ -19,13 +19,16 @@ class EcommerceController < ApplicationController
       @user = ""
       if params[:email_id].present?
         @user = User.find_by(email_id:params[:email_id])
-      else
+      elsif params[:country_code].present? && params[:mobile_no].present?
         @user = User.find_by(country_code:params[:country_code],mobile_no:params[:mobile_no])
       end
       if @user.present?
         if @user.authenticate(params[:password])
+          secret_key = Rails.application.credentials.secret_key
+          payload = {user_id:@user.id}
+          token = JWT.encode payload,secret_key
           return render json:{success:true,user:{
-          full_name:@user.full_name,email_id:@user.email_id,country_code:@user.country_code,mobile_no:@user.mobile_no
+          full_name:@user.full_name,email_id:@user.email_id,country_code:@user.country_code,mobile_no:@user.mobile_no,token:token
           }}
         else
           return render json:{success:false,error:"Incorrect password"}
@@ -35,7 +38,7 @@ class EcommerceController < ApplicationController
       end
       
     else
-      return render json:{success:false,error:"empty fields are not okay"}
+      return render json:{success:false,error:"Fields are empty"}
     end
   end
 end
