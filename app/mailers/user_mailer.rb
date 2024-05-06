@@ -1,5 +1,6 @@
 class UserMailer < ApplicationMailer
   def welcome_user(user_mail)
-    mail(to: user_mail,subject:"Welcoming the new user")
+    @otp = user_mail[:otp]
+    mail(to: user_mail[:email],subject:"Welcoming the new user")
   end
 end
