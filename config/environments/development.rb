@@ -78,7 +78,7 @@ Rails.application.configure do
     :port => "587",
     :domain => "example.com",
     :user_name => Rails.application.credentials.g_mail,
-    :password => Rails.application.credentials.g_password,
+    :password =>Rails.application.credentials.g_password,
     :authentication => "plain",
     :enable_starttls_auto => true
   } 

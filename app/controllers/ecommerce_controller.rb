@@ -45,6 +45,10 @@ class EcommerceController < ApplicationController
 
 
   def otp_generator
+    puts "++++++++++++++++++++++++++++++++++++"
+    puts Rails.application.credentials.g_mail
+    puts Rails.application.credentials.g_password
+    puts "++++++++++++++++++++++++++++++++++++++"
     token = request.headers['Authorization']&.split(' ')&.last
     if token.present?
       decoded_token = JWT.decode(token, Rails.application.credentials.secret_key)
