@@ -9,7 +9,7 @@ class EcommerceController < ApplicationController
     if @user.errors.any?
       return render json: {errors:@user.errors.full_messages}
     else
-      return render json: {success:false,errors:"Incorrect fields data"}
+      return render json: {success:false,message:"Incorrect fields data"}
     end
    end
   end
@@ -32,39 +32,75 @@ class EcommerceController < ApplicationController
           full_name:@user.full_name,email_id:@user.email_id,country_code:@user.country_code,mobile_no:@user.mobile_no,token:token
           }}
         else
-          return render json:{success:false,error:"Incorrect password"}
+          return render json:{success:false,message:"Incorrect password"}
         end
       else 
-        return render json: {success:false,error:"No user found"}
+        return render json: {success:false,message:"No user found"}
       end
       
     else
-      return render json:{success:false,error:"Fields are empty"}
+      return render json:{success:false,message:"Fields are empty"}
     end
   end
 
 
   def otp_generator
-    puts "++++++++++++++++++++++++++++++++++++"
-    puts Rails.application.credentials.g_mail
-    puts Rails.application.credentials.g_password
-    puts "++++++++++++++++++++++++++++++++++++++"
     token = request.headers['Authorization']&.split(' ')&.last
     if token.present?
       decoded_token = JWT.decode(token, Rails.application.credentials.secret_key)
       @current_user = User.find(decoded_token[0]['user_id'])
       if @current_user.present?
         otp = rand(1000...9999).to_s
+        Otp.create(otps:otp,user_id:@current_user.id)
         @user_details_with_otp = {email:@current_user.email_id,otp:otp}
         UserMailer.welcome_user(@user_details_with_otp).deliver_now
-        return render json:{one_time_password:otp}
+        return render json:{success:true,message:"Email sent successfully to registered mail id"}
       else
-        return render json:{error:"You are not a registered in the app"}
+        return render json:{success:false,message:"You are not a registered in the app"}
       end
     else
-      return render json:{error:'Token is not present'}
+      return render json:{success:false,message:'Token is not present'}
     end
   end
 
+def otp_validator
+  token = request.headers['Authorization']&.split(' ')&.last
+  if token.present? && params[:otp].present?
+    decoded_token = JWT.decode(token, Rails.application.credentials.secret_key)
+    @current_user = User.find(decoded_token[0]['user_id'])
+    if @current_user.present?
+      database_otp = @current_user&.otps&.last&.otps 
+      if database_otp.present? && database_otp == params[:otp] 
+        time1 = @current_user.otps.last.created_at
+        time2 = Time.now
+        seconds_diff = time_difference_in_seconds(time1, time2)
+        puts "++++++++++++++++++++++++++++++++++++++++"
+        puts seconds_diff
+        puts "+++++++++++++++++++++++++++++++++++++++"
+        if seconds_diff == false
+          @current_user.otps.destroy_all
+          return render json:{success:false,message:"otp validation time expired"}
+        end
+        @current_user.otps.destroy_all
+        return render json:{success:true,message:"otp validated"}
+      end
+      return render json:{success:false,message:"entered wrong otp or the otp you have sent is expired"}
+    else
+      return render json:{success:false,message:"You are not a registered in the app"}
+    end
+  else
+    return render json:{success:false,message:'missing fields'}
+  end
+end
+
+private 
+  def time_difference_in_seconds(time1, time2)
+    seconds_diff = (time2 - time1).to_i.abs
+    if seconds_diff <= 60
+      return seconds_diff
+    else
+      return false
+    end
+  end
 
 end
